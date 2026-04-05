@@ -9,7 +9,7 @@ const CATEGORIES = [
 ];
 
 export default function ArticleEditor() {
-  const { id } = useParams(); // undefined for new article
+  const { id } = useParams();
   const { authFetch } = useAuth();
   const navigate = useNavigate();
   const isNew = !id;
@@ -40,7 +40,7 @@ export default function ArticleEditor() {
   }, [id]);
 
   const handleSave = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     if (!title.trim()) {
       setError("Title is required");
       return;
@@ -48,12 +48,7 @@ export default function ArticleEditor() {
     setError("");
     setSaving(true);
     try {
-      const payload = {
-        title: title.trim(),
-        body,
-        category,
-        is_published: isPublished,
-      };
+      const payload = { title: title.trim(), body, category, is_published: isPublished };
       const res = await authFetch(
         isNew ? "/api/articles" : `/api/articles/${id}`,
         {
@@ -79,15 +74,38 @@ export default function ArticleEditor() {
     return <div className="p-8 text-center text-text-muted animate-pulse">Loading article...</div>;
   }
 
+  const SaveButton = () => (
+    <button type="button" onClick={handleSave} disabled={saving} className="btn-primary">
+      {saving ? "Saving..." : isNew ? "Create Article" : "Save Changes"}
+    </button>
+  );
+
+  const PublishedToggle = () => (
+    <label className="flex items-center gap-2 cursor-pointer select-none">
+      <input
+        type="checkbox"
+        checked={isPublished === 1}
+        onChange={(e) => setIsPublished(e.target.checked ? 1 : 0)}
+        className="rounded border-border"
+      />
+      <span className="text-sm text-text-secondary">Published</span>
+    </label>
+  );
+
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold text-text-primary">
+      {/* Sticky top action bar */}
+      <div className="sticky top-0 z-10 bg-surface/95 backdrop-blur border-b border-border -mx-6 px-6 py-3 mb-6 flex items-center justify-between">
+        <h1 className="text-base font-semibold text-text-primary">
           {isNew ? "New Article" : "Edit Article"}
         </h1>
-        <Link to={isNew ? "/" : `/articles/${id}`} className="btn-secondary text-sm py-1.5">
-          Cancel
-        </Link>
+        <div className="flex items-center gap-3">
+          <PublishedToggle />
+          <SaveButton />
+          <Link to={isNew ? "/" : `/articles/${id}`} className="btn-secondary text-sm py-1.5">
+            Cancel
+          </Link>
+        </div>
       </div>
 
       <form onSubmit={handleSave} className="space-y-4">
@@ -130,19 +148,10 @@ export default function ArticleEditor() {
           <TipTapEditor content={body} onChange={setBody} editable={true} />
         </div>
 
-        <div className="flex items-center justify-between pt-2">
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={isPublished === 1}
-              onChange={(e) => setIsPublished(e.target.checked ? 1 : 0)}
-              className="rounded border-border"
-            />
-            <span className="text-sm text-text-secondary">Published</span>
-          </label>
-          <button type="submit" disabled={saving} className="btn-primary">
-            {saving ? "Saving..." : isNew ? "Create Article" : "Save Changes"}
-          </button>
+        {/* Bottom action bar — convenience duplicate for long articles */}
+        <div className="flex items-center justify-between pt-2 border-t border-border">
+          <PublishedToggle />
+          <SaveButton />
         </div>
       </form>
     </div>
