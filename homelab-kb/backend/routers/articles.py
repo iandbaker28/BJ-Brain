@@ -43,6 +43,8 @@ def sanitize_html(html: str) -> str:
         tags=ALLOWED_TAGS,
         attributes=ALLOWED_ATTRIBUTES,
         css_sanitizer=_css_sanitizer,
+        # Allow data: URIs so base64-embedded images are preserved
+        protocols=list(bleach.sanitizer.ALLOWED_PROTOCOLS) + ["data"],
         strip=True,
     )
 
