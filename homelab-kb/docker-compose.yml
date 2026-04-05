@@ -1,0 +1,59 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://kb:kb@db:5432/homelab_kb
+      - OLLAMA_URL=http://host.docker.internal:11434
+      - OLLAMA_EMBED_MODEL=nomic-embed-text
+      - OLLAMA_RAG_MODEL=llama3.2:3b
+      - JWT_SECRET=${JWT_SECRET}
+      - DATA_PATH=/app/data
+      - CORS_ORIGINS=http://localhost:3010,http://ordis:3010
+    volumes:
+      - kb_data:/app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3010:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      - POSTGRES_USER=kb
+      - POSTGRES_PASSWORD=kb
+      - POSTGRES_DB=homelab_kb
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    # PostgreSQL intentionally not exposed on host port for security
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kb -d homelab_kb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  kb_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_PATH:-./data}
+  db_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DB_PATH:-./db_data}

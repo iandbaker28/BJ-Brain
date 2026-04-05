@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-surface text-text-primary font-sans;
+    min-height: 100vh;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #111115;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #2a2a38;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3730a3;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-accent hover:bg-accent-hover text-white px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply bg-surface-3 hover:bg-surface-4 text-text-primary px-4 py-2 rounded text-sm font-medium transition-colors border border-border;
+  }
+  .btn-danger {
+    @apply bg-red-900 hover:bg-red-800 text-white px-4 py-2 rounded text-sm font-medium transition-colors;
+  }
+  .input {
+    @apply bg-surface-2 border border-border rounded px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors w-full;
+  }
+  .card {
+    @apply bg-surface-1 border border-border rounded-lg p-4;
+  }
+}
+
+/* TipTap editor styles */
+.ProseMirror {
+  @apply text-text-primary outline-none;
+  min-height: 400px;
+  padding: 1rem;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  @apply text-text-muted;
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.ProseMirror h1 { @apply text-2xl font-semibold mt-6 mb-3 text-text-primary; }
+.ProseMirror h2 { @apply text-xl font-semibold mt-5 mb-2 text-text-primary; }
+.ProseMirror h3 { @apply text-lg font-semibold mt-4 mb-2 text-text-primary; }
+.ProseMirror p { @apply mb-3 leading-relaxed; }
+.ProseMirror ul { @apply list-disc pl-6 mb-3; }
+.ProseMirror ol { @apply list-decimal pl-6 mb-3; }
+.ProseMirror li { @apply mb-1; }
+.ProseMirror blockquote {
+  @apply border-l-4 border-accent-muted pl-4 italic text-text-secondary my-4;
+}
+.ProseMirror code {
+  @apply bg-surface-2 text-accent-hover font-mono text-sm px-1.5 py-0.5 rounded;
+}
+.ProseMirror pre {
+  @apply bg-surface-2 rounded-lg p-4 my-4 overflow-x-auto;
+}
+.ProseMirror pre code {
+  @apply bg-transparent text-text-primary p-0;
+}
+.ProseMirror a { @apply text-accent-hover underline; }
+.ProseMirror hr { @apply border-border my-6; }
+.ProseMirror img {
+  @apply max-w-full rounded cursor-pointer;
+}
+.ProseMirror img.ProseMirror-selectednode {
+  @apply ring-2 ring-accent;
+}
+
+/* Table styles */
+.ProseMirror table {
+  @apply w-full border-collapse my-4;
+}
+.ProseMirror th {
+  @apply bg-surface-3 border border-border px-3 py-2 text-left text-sm font-semibold;
+}
+.ProseMirror td {
+  @apply border border-border px-3 py-2 text-sm;
+}
+
+/* Article view prose styles */
+.article-content { @apply text-text-primary leading-relaxed; }
+.article-content h1 { @apply text-2xl font-semibold mt-6 mb-3; }
+.article-content h2 { @apply text-xl font-semibold mt-5 mb-2 border-b border-border pb-1; }
+.article-content h3 { @apply text-lg font-semibold mt-4 mb-2; }
+.article-content p { @apply mb-4; }
+.article-content ul { @apply list-disc pl-6 mb-4 space-y-1; }
+.article-content ol { @apply list-decimal pl-6 mb-4 space-y-1; }
+.article-content blockquote {
+  @apply border-l-4 border-accent-muted pl-4 italic text-text-secondary my-4;
+}
+.article-content code {
+  @apply bg-surface-2 text-accent-hover font-mono text-sm px-1.5 py-0.5 rounded;
+}
+.article-content pre {
+  @apply bg-surface-2 rounded-lg p-4 my-4 overflow-x-auto border border-border;
+}
+.article-content pre code { @apply bg-transparent text-text-primary p-0 text-sm; }
+.article-content a { @apply text-accent-hover hover:underline; }
+.article-content img { @apply max-w-full rounded my-4; }
+.article-content table { @apply w-full border-collapse my-4; }
+.article-content th { @apply bg-surface-3 border border-border px-3 py-2 text-left text-sm font-semibold; }
+.article-content td { @apply border border-border px-3 py-2 text-sm; }
+.article-content hr { @apply border-border my-6; }
