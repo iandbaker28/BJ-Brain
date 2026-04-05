@@ -150,9 +150,12 @@ async def _regenerate_embeddings(article_id: int, title: str, body: str):
 async def list_articles(
     category: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    _user=Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
-    q = select(Article).where(Article.is_published == 1)
+    q = select(Article)
+    # Readers only see published articles; editors/admins see everything
+    if current_user.role == "reader":
+        q = q.where(Article.is_published == 1)
     if category:
         q = q.where(Article.category == category)
     q = q.order_by(Article.category, Article.title)
@@ -164,11 +167,17 @@ async def list_articles(
 @router.get("/categories")
 async def list_categories(
     db: AsyncSession = Depends(get_db),
-    _user=Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        text("SELECT DISTINCT category FROM articles WHERE is_published = 1 ORDER BY category")
-    )
+    # Readers only see categories that have published articles
+    if current_user.role == "reader":
+        result = await db.execute(
+            text("SELECT DISTINCT category FROM articles WHERE is_published = 1 ORDER BY category")
+        )
+    else:
+        result = await db.execute(
+            text("SELECT DISTINCT category FROM articles ORDER BY category")
+        )
     return [row[0] for row in result.fetchall()]
 
 

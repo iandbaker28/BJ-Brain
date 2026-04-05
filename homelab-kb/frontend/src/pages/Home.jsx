@@ -64,11 +64,18 @@ export default function Home() {
                   <Link
                     key={art.id}
                     to={`/articles/${art.id}`}
-                    className="card hover:border-accent/30 transition-colors group"
+                    className={`card hover:border-accent/30 transition-colors group ${!art.is_published ? "border-dashed opacity-70" : ""}`}
                   >
-                    <h3 className="text-sm font-medium text-text-primary group-hover:text-accent-hover transition-colors mb-1">
-                      {art.title}
-                    </h3>
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <h3 className="text-sm font-medium text-text-primary group-hover:text-accent-hover transition-colors">
+                        {art.title}
+                      </h3>
+                      {!art.is_published && (
+                        <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded border border-border bg-surface-3 text-text-muted leading-none">
+                          draft
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-text-muted">
                       Updated {new Date(art.updated_at).toLocaleDateString("en-US", {
                         month: "short", day: "numeric", year: "numeric"
