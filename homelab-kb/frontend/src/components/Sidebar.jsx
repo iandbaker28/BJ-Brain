@@ -80,14 +80,19 @@ export default function Sidebar({ isOpen, onClose }) {
                             to={`/articles/${art.id}`}
                             onClick={onClose}
                             className={`
-                              block px-3 py-1.5 rounded text-sm transition-colors truncate
+                              flex items-center gap-1.5 px-3 py-1.5 rounded text-sm transition-colors
                               ${String(art.id) === String(id)
                                 ? "bg-accent/20 text-accent-hover border-l-2 border-accent pl-[10px]"
                                 : "text-text-secondary hover:bg-surface-3 hover:text-text-primary"}
                             `}
                             title={art.title}
                           >
-                            {art.title}
+                            <span className="truncate flex-1">{art.title}</span>
+                            {!art.is_published && (
+                              <span className="flex-shrink-0 text-[10px] px-1 py-0.5 rounded bg-surface-4 text-text-muted border border-border leading-none">
+                                draft
+                              </span>
+                            )}
                           </Link>
                         </li>
                       ))}
