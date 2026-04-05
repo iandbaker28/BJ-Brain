@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     ollama_rag_model: str = "llama3.2:3b"
     jwt_secret: str = "change_this_to_a_long_random_string"
     jwt_algorithm: str = "HS256"
-    access_token_expire_minutes: int = 15
+    access_token_expire_minutes: int = 480  # 8 hours — internal homelab tool
     refresh_token_expire_days: int = 7
     data_path: str = "/app/data"
     cors_origins: str = "*"
