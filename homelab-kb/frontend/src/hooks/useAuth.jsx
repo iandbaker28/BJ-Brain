@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, createContext, useContext } from "react";
+import { useState, useEffect, useCallback, useRef, createContext, useContext } from "react";
 
 const AuthContext = createContext(null);
 
@@ -9,6 +9,9 @@ const ROLE_KEY = "kb_role";
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  // Shared refresh promise — prevents concurrent 401s from triggering
+  // multiple refresh calls. All callers await the same in-flight promise.
+  const refreshPromiseRef = useRef(null);
 
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
@@ -34,25 +37,35 @@ export function AuthProvider({ children }) {
   }, []);
 
   const tryRefresh = useCallback(async () => {
-    const refresh = localStorage.getItem(REFRESH_KEY);
-    if (!refresh) return false;
-    try {
-      const res = await fetch("/api/auth/refresh", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh_token: refresh }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        localStorage.setItem(TOKEN_KEY, data.access_token);
-        localStorage.setItem(REFRESH_KEY, data.refresh_token);
-        localStorage.setItem(ROLE_KEY, data.role);
-        return await fetchMe(data.access_token);
+    // If a refresh is already in flight, return that same promise
+    if (refreshPromiseRef.current) return refreshPromiseRef.current;
+
+    const doRefresh = async () => {
+      const refresh = localStorage.getItem(REFRESH_KEY);
+      if (!refresh) return false;
+      try {
+        const res = await fetch("/api/auth/refresh", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh_token: refresh }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          localStorage.setItem(TOKEN_KEY, data.access_token);
+          localStorage.setItem(REFRESH_KEY, data.refresh_token);
+          localStorage.setItem(ROLE_KEY, data.role);
+          return await fetchMe(data.access_token);
+        }
+      } catch {
+        /* ignore */
       }
-    } catch {
-      /* ignore */
-    }
-    return false;
+      return false;
+    };
+
+    refreshPromiseRef.current = doRefresh().finally(() => {
+      refreshPromiseRef.current = null;
+    });
+    return refreshPromiseRef.current;
   }, [fetchMe]);
 
   useEffect(() => {
@@ -92,10 +105,7 @@ export function AuthProvider({ children }) {
     let token = getToken();
     let res = await fetch(url, {
       ...options,
-      headers: {
-        ...(options.headers || {}),
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` },
     });
     if (res.status === 401) {
       const refreshed = await tryRefresh();
@@ -103,10 +113,7 @@ export function AuthProvider({ children }) {
         token = getToken();
         res = await fetch(url, {
           ...options,
-          headers: {
-            ...(options.headers || {}),
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` },
         });
       } else {
         logout();
