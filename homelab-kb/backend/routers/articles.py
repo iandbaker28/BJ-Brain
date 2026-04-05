@@ -1,5 +1,6 @@
 import bleach
 import logging
+from bleach.css_sanitizer import CSSSanitizer
 from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
@@ -33,6 +34,7 @@ ALLOWED_ATTRIBUTES = {
     "td": ["colspan", "rowspan"],
 }
 ALLOWED_STYLES = ["color", "background-color", "font-weight", "font-style", "text-decoration"]
+_css_sanitizer = CSSSanitizer(allowed_css_properties=ALLOWED_STYLES)
 
 
 def sanitize_html(html: str) -> str:
@@ -40,6 +42,7 @@ def sanitize_html(html: str) -> str:
         html,
         tags=ALLOWED_TAGS,
         attributes=ALLOWED_ATTRIBUTES,
+        css_sanitizer=_css_sanitizer,
         strip=True,
     )
 
@@ -113,35 +116,34 @@ class FeedbackCreate(BaseModel):
 
 async def _regenerate_embeddings(article_id: int, title: str, body: str):
     """Background task: chunk article and regenerate embeddings."""
+    import re
     from ..core.database import AsyncSessionLocal
-    async with AsyncSessionLocal() as db:
-        try:
-            # Delete old chunks
-            await db.execute(delete(ArticleChunk).where(ArticleChunk.article_id == article_id))
-            await db.commit()
+    db = AsyncSessionLocal()
+    try:
+        # Delete old chunks
+        await db.execute(delete(ArticleChunk).where(ArticleChunk.article_id == article_id))
+        await db.commit()
 
-            # Generate new chunks and embeddings
-            text_for_embedding = f"{title}\n\n{body}"
-            # Strip HTML tags for embedding
-            import re
-            plain = re.sub(r"<[^>]+>", " ", text_for_embedding)
-            plain = re.sub(r"\s+", " ", plain).strip()
+        # Strip HTML tags and generate embeddings
+        plain = re.sub(r"<[^>]+>", " ", f"{title}\n\n{body}")
+        plain = re.sub(r"\s+", " ", plain).strip()
 
-            chunks = chunk_text(plain)
-            for idx, chunk in enumerate(chunks):
-                embedding = await generate_embedding(chunk)
-                ac = ArticleChunk(
-                    article_id=article_id,
-                    chunk_index=idx,
-                    chunk_text=chunk,
-                    embedding=embedding,
-                )
-                db.add(ac)
-            await db.commit()
-            logger.info(f"Regenerated {len(chunks)} embedding chunks for article {article_id}")
-        except Exception as e:
-            logger.error(f"Embedding regeneration failed for article {article_id}: {e}")
-            await db.rollback()
+        chunks = chunk_text(plain)
+        for idx, chunk in enumerate(chunks):
+            embedding = await generate_embedding(chunk)
+            db.add(ArticleChunk(
+                article_id=article_id,
+                chunk_index=idx,
+                chunk_text=chunk,
+                embedding=embedding,
+            ))
+        await db.commit()
+        logger.info(f"Regenerated {len(chunks)} embedding chunks for article {article_id}")
+    except Exception as e:
+        logger.error(f"Embedding regeneration failed for article {article_id}: {e}")
+        await db.rollback()
+    finally:
+        await db.close()
 
 
 @router.get("", response_model=list[ArticleOut])
